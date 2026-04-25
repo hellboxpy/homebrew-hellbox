@@ -1,28 +1,28 @@
 class Hell < Formula
   desc "Lightweight wrapper around uv for running the Hellbox toolchain"
   homepage "https://github.com/hellboxpy/hell"
-  version "0.3.0"
+  version "0.4.0"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://github.com/hellboxpy/hell/releases/download/v#{version}/hell-aarch64-apple-darwin"
-      sha256 "ba3223fa5e10b063edfa9a694af5455d906a34d690c11897fab4d4000a937bda"
+      sha256 "981eb1c4b07c2c24e185009af135fb45f2e68839eed5b7794c8930853bf7a090"
     end
     on_intel do
       url "https://github.com/hellboxpy/hell/releases/download/v#{version}/hell-x86_64-apple-darwin"
-      sha256 "631c9d948710eaac8b3728ab5c3996e1d887bb448d20cc201512e8c8982db40e"
+      sha256 "c9e633c401b1d6734208ec5acb7f77b3818f262bd25006e6cd7378cd88fb8d4a"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/hellboxpy/hell/releases/download/v#{version}/hell-aarch64-unknown-linux-musl"
-      sha256 "5eb1520f1d77ca00e1d3647366436f8d8815306af1193fa8d2a6ba519dfff207"
+      sha256 "56fe1e61631fa777cdcb4698a5931b434328edc855052de090f61397ec3c95eb"
     end
     on_intel do
       url "https://github.com/hellboxpy/hell/releases/download/v#{version}/hell-x86_64-unknown-linux-musl"
-      sha256 "e2291b9770fbaa94361223d904b5041c30fb97b48e53e46244ad7d531e0e71da"
+      sha256 "b7a73ebdabc349acaf346cee4c258dfc916d2459c520deb4e56d51ea03d40715"
     end
   end
 
