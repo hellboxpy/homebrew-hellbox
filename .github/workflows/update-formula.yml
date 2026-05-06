@@ -1,0 +1,85 @@
+name: Update formula
+
+on:
+  repository_dispatch:
+    types: [hell-release]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download SHA256 checksums
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$VERSION" --repo hellboxpy/hell \
+            --pattern "*.sha256" --dir checksums
+
+      - name: Update formula
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          read_sha() { awk '{print $1}' "checksums/$1.sha256"; }
+
+          SHA_AARCH64_DARWIN=$(read_sha hell-aarch64-apple-darwin)
+          SHA_X86_64_DARWIN=$(read_sha hell-x86_64-apple-darwin)
+          SHA_AARCH64_LINUX=$(read_sha hell-aarch64-unknown-linux-musl)
+          SHA_X86_64_LINUX=$(read_sha hell-x86_64-unknown-linux-musl)
+          VER="${VERSION#v}"
+
+          cat > Formula/hell.rb << FORMULA
+          class Hell < Formula
+            desc "Lightweight wrapper around uv for running the Hellbox toolchain"
+            homepage "https://github.com/hellboxpy/hell"
+            version "$VER"
+            license "MIT"
+
+            on_macos do
+              on_arm do
+                url "https://github.com/hellboxpy/hell/releases/download/v#{version}/hell-aarch64-apple-darwin"
+                sha256 "$SHA_AARCH64_DARWIN"
+              end
+              on_intel do
+                url "https://github.com/hellboxpy/hell/releases/download/v#{version}/hell-x86_64-apple-darwin"
+                sha256 "$SHA_X86_64_DARWIN"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/hellboxpy/hell/releases/download/v#{version}/hell-aarch64-unknown-linux-musl"
+                sha256 "$SHA_AARCH64_LINUX"
+              end
+              on_intel do
+                url "https://github.com/hellboxpy/hell/releases/download/v#{version}/hell-x86_64-unknown-linux-musl"
+                sha256 "$SHA_X86_64_LINUX"
+              end
+            end
+
+            def install
+              os   = OS.mac? ? "apple-darwin" : "unknown-linux-musl"
+              arch = Hardware::CPU.intel? ? "x86_64" : "aarch64"
+              bin.install "hell-#{arch}-#{os}" => "hell"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/hell environment 2>&1")
+            end
+          end
+          FORMULA
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/hell.rb
+          git commit -m "Update hell to ${VERSION#v}"
+          git push
