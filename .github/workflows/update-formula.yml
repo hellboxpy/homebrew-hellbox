@@ -3,6 +3,7 @@ name: Update formula
 on:
   repository_dispatch:
     types: [hell-release]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,17 +14,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolve version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION=$(gh release view --repo hellboxpy/hell --json tagName --jq .tagName)
+          else
+            VERSION="${{ github.event.client_payload.version }}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
       - name: Download SHA256 checksums
         env:
-          VERSION: ${{ github.event.client_payload.version }}
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release download "$VERSION" --repo hellboxpy/hell \
             --pattern "*.sha256" --dir checksums
 
       - name: Update formula
-        env:
-          VERSION: ${{ github.event.client_payload.version }}
         run: |
           read_sha() { awk '{print $1}' "checksums/$1.sha256"; }
 
@@ -75,8 +84,6 @@ jobs:
           FORMULA
 
       - name: Commit and push
-        env:
-          VERSION: ${{ github.event.client_payload.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
